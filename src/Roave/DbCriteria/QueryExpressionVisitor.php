@@ -24,11 +24,38 @@ class QueryExpressionVisitor extends ExpressionVisitor
     {
 
         $where = new Where;
+
         switch ($comparison->getOperator()) {
             case Comparison::IN:
-                $where->in();
+                return $where->in();
 
+            case Comparison::NIN:
+                return $where->notIn();
 
+            case Comparison::EQ:
+            case Comparison::IS:
+                return $where->equalTo();
+
+            case Comparison::NEQ:
+                return $where->notEqualTo();
+
+            case Comparison::CONTAINS:
+                return $where->like();
+
+            case Comparison::GT:
+                return $where->greaterThan();
+
+            case Comparison::GTE:
+                return $where->greaterThanOrEqualTo();
+
+            case Comparison::LT:
+                return $where->lessThan();
+
+            case Comparison::LTE:
+                return $where->lessThanOrEqualTo();
+
+            default:
+                throw new \RuntimeException('Unknown comparison operator: ' . $comparison->getOperator());
         }
 
     }
