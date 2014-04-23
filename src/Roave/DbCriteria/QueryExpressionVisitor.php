@@ -11,14 +11,6 @@ use Zend\Db\Sql\Where;
 
 class QueryExpressionVisitor extends ExpressionVisitor
 {
-    public function walkCompositeExpression(CompositeExpression $exp)
-    {
-        $expressionList = array();
-
-        foreach ($exp->getExpressionList() as $child) {
-            $expressionList[] = $this->dispatch($child);
-        }
-    }
 
     public function walkComparison(Comparison $comparison)
     {
@@ -34,7 +26,7 @@ class QueryExpressionVisitor extends ExpressionVisitor
 
             case Comparison::EQ:
             case Comparison::IS:
-                return $where->equalTo();
+                return $where->equalTo($comparison->getField(), $this->walkValue($comparison->getValue()));
 
             case Comparison::NEQ:
                 return $where->notEqualTo();
@@ -60,4 +52,17 @@ class QueryExpressionVisitor extends ExpressionVisitor
 
     }
 
+    public function walkValue(Value $value)
+    {
+        return $value->getValue();
+    }
+
+    public function walkCompositeExpression(CompositeExpression $exp)
+    {
+        $expressionList = array();
+
+        foreach ($exp->getExpressionList() as $child) {
+            $expressionList[] = $this->dispatch($child);
+        }
+    }
 }
