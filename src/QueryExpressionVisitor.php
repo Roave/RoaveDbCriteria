@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\Expr\Comparison;
 use Doctrine\Common\Collections\Expr\CompositeExpression;
 use Doctrine\Common\Collections\Expr\Value;
 use Zend\Db\Sql\Predicate\Operator;
+use Zend\Db\Sql\Predicate\PredicateSet;
 use Zend\Db\Sql\Predicate\Like;
 use Zend\Db\Sql\Predicate\In;
 use Zend\Db\Sql\Predicate\NotIn;
@@ -80,12 +81,26 @@ class QueryExpressionVisitor extends ExpressionVisitor
 
     }
 
-    public function walkCompositeExpression(CompositeExpression $exp)
+    /**
+     * {@inheritDoc}
+     */
+    public function walkCompositeExpression(CompositeExpression $expr)
     {
         $expressionList = array();
 
         foreach ($exp->getExpressionList() as $child) {
             $expressionList[] = $this->dispatch($child);
+        }
+
+        switch($expr->getType()) {
+            case CompositeExpression::TYPE_AND:
+                return new PredicateSet($expressionList, PredicateSet::OP_AND);
+
+            case CompositeExpression::TYPE_OR:
+                return new PredicateSet($expressionList, PredicateSet::OP_OR);
+
+            default:
+                throw new \RuntimeException("Unknown composite " . $expr->getType());
         }
     }
 
