@@ -7,26 +7,12 @@ use Doctrine\Common\Collections\Criteria;
 
 class QueryExpressionVisitorTest extends PHPUnit_Framework_TestCase
 {
-    /**
-     * @dataProvider criteriaQueries
-     */
-    public function testWhereClauseHasExpectedOperator($criteria, $queries)
+    public function testWhereClauseHasExpectedOperator()
     {
         $criteria = Criteria::create()
             ->where(Criteria::expr()->eq('ID', 123));
-        $visitor   = new QueryExpressionVisitor('test');
-        $where     = $visitor->dispatch($criteria->getWhereExpression());
-        $predicate = $where->getPredicates()[0][1];
+        $visitor   = new QueryExpressionVisitor();
+        $predicate     = $visitor->dispatch($criteria->getWhereExpression());
         $this->assertEquals($predicate::OP_EQ, $predicate->getOperator());
-    }
-
-    public function criteriaQueries()
-    {
-        return array(
-            array(
-                Criteria::create(),
-                'SELECT...'
-            ),
-        );
     }
 }

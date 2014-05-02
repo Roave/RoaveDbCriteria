@@ -3,17 +3,19 @@ namespace Roave\DbCriteria;
 
 use Doctrine\Common\Collections\ArrayCollection;
 
-use Doctrine\Common\Collections\Expr\ExpressionVisitor;
 use Doctrine\Common\Collections\Expr\Comparison;
 use Doctrine\Common\Collections\Expr\CompositeExpression;
+use Doctrine\Common\Collections\Expr\ExpressionVisitor;
+use Doctrine\Common\Collections\Expr\Expression;
 use Doctrine\Common\Collections\Expr\Value;
-use Zend\Db\Sql\Predicate\Operator;
-use Zend\Db\Sql\Predicate\PredicateSet;
-use Zend\Db\Sql\Predicate\Like;
 use Zend\Db\Sql\Predicate\In;
-use Zend\Db\Sql\Predicate\NotIn;
-use Zend\Db\Sql\Predicate\IsNull;
 use Zend\Db\Sql\Predicate\IsNotNull;
+use Zend\Db\Sql\Predicate\IsNull;
+use Zend\Db\Sql\Predicate\Like;
+use Zend\Db\Sql\Predicate\NotIn;
+use Zend\Db\Sql\Predicate\Operator;
+use Zend\Db\Sql\Predicate\PredicateInterface;
+use Zend\Db\Sql\Predicate\PredicateSet;
 
 class QueryExpressionVisitor extends ExpressionVisitor
 {
@@ -56,22 +58,20 @@ class QueryExpressionVisitor extends ExpressionVisitor
                 // @todo $value should be an array?
                 $predicate = new NotIn($field, $value);
                 break;
+            case Comparison::CONTAINS:
+                return new Like($field, '%' . $value . '%');
+
             case Comparison::EQ:
             case Comparison::IS:
                 if ($value === null) {
                     return new IsNull($field);
                 }
-                break;
             case Comparison::NEQ:
                 if ($value === null) {
                     return new IsNotNull($field);
                 }
-
-            case Comparison::CONTAINS:
-                return new Like($field, '%' . $value . '%');
-
             default:
-                $zendDbOperator = self::converyComparisonOperator($operator);
+                $zendDbOperator = self::convertComparisonOperator($operator);
                 if (!$zendDbOperator) {
                     throw new \RuntimeException("Unknown comparison operator: {$operator}");
                 }
@@ -107,5 +107,15 @@ class QueryExpressionVisitor extends ExpressionVisitor
     public function walkValue(Value $value)
     {
         return $value->getValue();
+    }
+
+    public function dispatch(Expression $expr)
+    {
+        $predicate = parent::dispatch($expr);
+        if (!$predicate instanceof PredicateInterface) {
+            throw new \DomainException("Expression passed to this visitor must produce Zend\Db predicate");
+        }
+
+        return $predicate;
     }
 }
