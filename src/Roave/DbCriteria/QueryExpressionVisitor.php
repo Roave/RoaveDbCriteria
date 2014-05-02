@@ -8,11 +8,15 @@ use Doctrine\Common\Collections\Expr\Comparison;
 use Doctrine\Common\Collections\Expr\CompositeExpression;
 use Doctrine\Common\Collections\Expr\Value;
 use Zend\Db\Sql\Predicate\Operator;
-use Zend\Db\Sql\Where;
+use Zend\Db\Sql\Predicate\Like;
+use Zend\Db\Sql\Predicate\In;
+use Zend\Db\Sql\Predicate\NotIn;
+use Zend\Db\Sql\Predicate\IsNull;
+use Zend\Db\Sql\Predicate\IsNotNull;
 
 class QueryExpressionVisitor extends ExpressionVisitor
 {
-    protected $operatorMap = array(
+    protected static $operatorMap = array(
         Comparison::EQ  => Operator::OP_EQ,
         Comparison::IS  => Operator::OP_EQ,
         Comparison::NEQ => Operator::NE,
@@ -22,53 +26,62 @@ class QueryExpressionVisitor extends ExpressionVisitor
         Comparison::GTE => Operator::GTE,
     );
 
-    public function walkComparison(Comparison $comparison)
+    /**
+     * Converts Criteria expression to Query one based on static map.
+     *
+     * @param string $operator
+     *
+     * @return string|null
+     */
+    private static function convertComparisonOperator($operator)
     {
-
-        $where = new Where;
-
-        $field = $comparison->getField();
-        $value = $this->walkValue($comparison->getValue());
-        $operator = $comparison->getOperator();
-
-        switch ($operator) {
-            case Comparison::IN:
-                return $where->in();
-
-            case Comparison::NIN:
-                return $where->notIn();
-
-            case Comparison::CONTAINS:
-                return $where->like();
-
-            case Comparison::EQ:
-            case Comparison::IS:
-            case Comparison::NEQ:
-            case Comparison::GT:
-            case Comparison::GTE:
-            case Comparison::LT:
-            case Comparison::LTE:
-                $zendDbOperator = $this->getZendDbOperator($operator);
-                $where->addPredicate(
-                    new Operator($field, $zendDbOperator, $value),
-                    Operator::OP_AND // @todo, probably needs to be dynamic
-                );
-
-
-            default:
-                throw new \RuntimeException('Unknown comparison operator: ' . $comparison->getOperator());
-        }
-
-    }
-
-    protected function getZendDbOperator($operator)
-    {
-        return $this->comparisonOperators[$comparison];
+        return isset(self::$operatorMap[$operator]) ? self::$operatorMap[$operator] : null;
     }
 
     public function walkValue(Value $value)
     {
         return $value->getValue();
+    }
+    public function walkComparison(Comparison $comparison)
+    {
+        $field = $comparison->getField();
+        $value = $this->walkValue($comparison->getValue());
+        $operator = $comparison->getOperator();
+        $predicate = null;
+
+        switch ($operator) {
+            case Comparison::IN:
+                // @todo $value should be an array?
+                $predicate = new In($field, $value);
+                break;
+
+            case Comparison::NIN:
+                // @todo $value should be an array?
+                $predicate = new NotIn($field, $value);
+                break;
+            case Comparison::EQ:
+            case Comparison::IS:
+                if ($value === null) {
+                    return new IsNull($field);
+                }
+                break;
+            case Comparison::NEQ:
+                if ($value === null) {
+                    return new IsNotNull($field);
+                }
+
+            case Comparison::CONTAINS:
+                return new Like($field, '%' . $value . '%');
+
+            default:
+                $zendDbOperator = self::converyComparisonOperator($operator);
+                if (!$zendDbOperator) {
+                    throw new \RuntimeException("Unknown comparison operator: {$operator}");
+                }
+
+                return new Operator($field, $zendDbOperator, $value);
+        }
+
     }
 
     public function walkCompositeExpression(CompositeExpression $exp)
@@ -78,5 +91,10 @@ class QueryExpressionVisitor extends ExpressionVisitor
         foreach ($exp->getExpressionList() as $child) {
             $expressionList[] = $this->dispatch($child);
         }
+    }
+
+    public function walkValue(Value $value)
+    {
+        return $value->getValue();
     }
 }
