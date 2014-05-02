@@ -49,4 +49,26 @@ class QueryExpressionVisitorTest extends PHPUnit_Framework_TestCase
         }
     }
 
+    public function testExpressionInWithEmptyArray()
+    {
+        $visitor   = new QueryExpressionVisitor();
+        $criteria = Criteria::create()
+            ->where(Criteria::expr()->in('foo', array()));
+
+        $predicate = $visitor->dispatch($criteria->getWhereExpression());
+        $this->assertInstanceOf('Zend\Db\Sql\Predicate\Expression', $predicate);
+        $this->assertSame('false', $predicate->getExpression());
+    }
+
+    public function testExpressionNotInWithEmptyArray()
+    {
+        $visitor   = new QueryExpressionVisitor();
+        $criteria = Criteria::create()
+            ->where(Criteria::expr()->notIn('foo', array()));
+
+        $predicate = $visitor->dispatch($criteria->getWhereExpression());
+        $this->assertInstanceOf('Zend\Db\Sql\Predicate\Expression', $predicate);
+        $this->assertSame('true', $predicate->getExpression());
+    }
+
 }
