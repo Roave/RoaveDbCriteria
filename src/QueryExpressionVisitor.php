@@ -19,11 +19,11 @@ class QueryExpressionVisitor extends ExpressionVisitor
     protected static $operatorMap = array(
         Comparison::EQ  => Operator::OP_EQ,
         Comparison::IS  => Operator::OP_EQ,
-        Comparison::NEQ => Operator::NE,
-        Comparison::LT  => Operator::LT,
-        Comparison::LTE => Operator::LTE,
-        Comparison::GT  => Operator::GT,
-        Comparison::GTE => Operator::GTE,
+        Comparison::NEQ => Operator::OP_NE,
+        Comparison::LT  => Operator::OP_LT,
+        Comparison::LTE => Operator::OP_LTE,
+        Comparison::GT  => Operator::OP_GT,
+        Comparison::GTE => Operator::OP_GTE,
     );
 
     /**
@@ -38,10 +38,6 @@ class QueryExpressionVisitor extends ExpressionVisitor
         return isset(self::$operatorMap[$operator]) ? self::$operatorMap[$operator] : null;
     }
 
-    public function walkValue(Value $value)
-    {
-        return $value->getValue();
-    }
     public function walkComparison(Comparison $comparison)
     {
         $field = $comparison->getField();
