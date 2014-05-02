@@ -5,9 +5,10 @@ use Doctrine\Common\Collections\ArrayCollection;
 
 use Doctrine\Common\Collections\Expr\Comparison;
 use Doctrine\Common\Collections\Expr\CompositeExpression;
-use Doctrine\Common\Collections\Expr\ExpressionVisitor;
 use Doctrine\Common\Collections\Expr\Expression;
+use Doctrine\Common\Collections\Expr\ExpressionVisitor;
 use Doctrine\Common\Collections\Expr\Value;
+use Zend\Db\Sql\Predicate\Expression as PredicateExpression;
 use Zend\Db\Sql\Predicate\In;
 use Zend\Db\Sql\Predicate\IsNotNull;
 use Zend\Db\Sql\Predicate\IsNull;
@@ -50,12 +51,26 @@ class QueryExpressionVisitor extends ExpressionVisitor
 
         switch ($operator) {
             case Comparison::IN:
-                // @todo $value should be an array?
+                if (!is_array($value)) {
+                    throw new \RuntimeException('Value for expression IN must be an array');
+                }
+
+                // empty IN () causes SQL error. Evaluate "in empty array" as always false
+                if (empty($value)) {
+                    return new PredicateExpression('false');
+                }
                 $predicate = new In($field, $value);
                 break;
 
             case Comparison::NIN:
-                // @todo $value should be an array?
+                if (!is_array($value)) {
+                    throw new \RuntimeException('Value for expression "not in" (NIN) must be an array');
+                }
+
+                // empty NOT IN () causes SQL error. Evaluate "not in empty array" as always true
+                if (empty($value)) {
+                    return new PredicateExpression('true');
+                }
                 $predicate = new NotIn($field, $value);
                 break;
             case Comparison::CONTAINS:
