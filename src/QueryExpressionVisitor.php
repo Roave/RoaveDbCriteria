@@ -88,7 +88,7 @@ class QueryExpressionVisitor extends ExpressionVisitor
     {
         $expressionList = array();
 
-        foreach ($exp->getExpressionList() as $child) {
+        foreach ($expr->getExpressionList() as $child) {
             $expressionList[] = $this->dispatch($child);
         }
 
