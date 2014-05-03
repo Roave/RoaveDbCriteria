@@ -70,4 +70,22 @@ class QueryExpressionVisitorTest extends PHPUnit_Framework_TestCase
         $this->assertInstanceOf('Zend\Db\Sql\Predicate\Expression', $predicate);
         $this->assertSame('true', $predicate->getExpression());
     }
+
+    public function testProducesNullWithEqNullCriteria()
+    {
+        $visitor   = new QueryExpressionVisitor();
+        $criteria  = Criteria::create()->where(Criteria::expr()->eq('foo', null));
+        $predicate = $visitor->dispatch($criteria->getWhereExpression());
+
+        $this->assertInstanceOf('Zend\Db\Sql\Predicate\IsNull', $predicate);
+    }
+
+    public function testProducesNotNullWithNeqNullCriteria()
+    {
+        $visitor   = new QueryExpressionVisitor();
+        $criteria  = Criteria::create()->where(Criteria::expr()->neq('foo', null));
+        $predicate = $visitor->dispatch($criteria->getWhereExpression());
+
+        $this->assertInstanceOf('Zend\Db\Sql\Predicate\IsNotNull', $predicate);
+    }
 }
