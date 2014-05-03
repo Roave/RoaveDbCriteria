@@ -70,5 +70,4 @@ class QueryExpressionVisitorTest extends PHPUnit_Framework_TestCase
         $this->assertInstanceOf('Zend\Db\Sql\Predicate\Expression', $predicate);
         $this->assertSame('true', $predicate->getExpression());
     }
-
 }

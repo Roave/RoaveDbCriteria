@@ -75,16 +75,18 @@ class QueryExpressionVisitor extends ExpressionVisitor
                 break;
             case Comparison::CONTAINS:
                 return new Like($field, '%' . $value . '%');
-
             case Comparison::EQ:
+                // intentional fall-through
             case Comparison::IS:
                 if ($value === null) {
                     return new IsNull($field);
                 }
+                // intentional fall-through
             case Comparison::NEQ:
                 if ($value === null) {
                     return new IsNotNull($field);
                 }
+                // intentional fall-through
             default:
                 $zendDbOperator = self::convertComparisonOperator($operator);
                 if (!$zendDbOperator) {
