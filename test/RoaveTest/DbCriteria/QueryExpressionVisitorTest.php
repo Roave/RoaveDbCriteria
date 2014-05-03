@@ -138,4 +138,13 @@ class QueryExpressionVisitorTest extends PHPUnit_Framework_TestCase
 
         $this->assertInstanceOf('Zend\Db\Sql\Predicate\Expression', $predicate);
     }
+
+    public function testProducesNotInPredicate()
+    {
+        $visitor   = new QueryExpressionVisitor();
+        $criteria  = Criteria::create()->where(Criteria::expr()->notIn('foo', array('bar', 'baz')));
+        $predicate = $visitor->dispatch($criteria->getWhereExpression());
+
+        $this->assertInstanceOf('Zend\Db\Sql\Predicate\Expression', $predicate);
+    }
 }
