@@ -71,4 +71,12 @@ class QueryExpressionVisitorTest extends PHPUnit_Framework_TestCase
         $this->assertSame('true', $predicate->getExpression());
     }
 
+    public function testProducesInPredicate()
+    {
+        $visitor   = new QueryExpressionVisitor();
+        $criteria  = Criteria::create()->where(Criteria::expr()->in('foo', array('bar', 'baz')));
+        $predicate = $visitor->dispatch($criteria->getWhereExpression());
+
+        $this->assertInstanceOf('Zend\Db\Sql\Predicate\Expression', $predicate);
+    }
 }
