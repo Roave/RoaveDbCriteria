@@ -70,8 +70,8 @@ class QueryExpressionVisitor extends ExpressionVisitor
                 if (empty($value)) {
                     return new PredicateExpression('false');
                 }
-                $predicate = new In($field, $value);
-                break;
+
+                return new In($field, $value);
 
             case Comparison::NIN:
                 if (!is_array($value)) {
@@ -82,8 +82,9 @@ class QueryExpressionVisitor extends ExpressionVisitor
                 if (empty($value)) {
                     return new PredicateExpression('true');
                 }
-                $predicate = new NotIn($field, $value);
-                break;
+
+                return new NotIn($field, $value);
+
             case Comparison::CONTAINS:
                 return new Like($field, '%' . $value . '%');
             case Comparison::EQ:
