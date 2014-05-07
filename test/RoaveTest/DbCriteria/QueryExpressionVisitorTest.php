@@ -5,6 +5,7 @@ use PHPUnit_Framework_TestCase;
 use Roave\DbCriteria\QueryExpressionVisitor;
 use Doctrine\Common\Collections\Criteria;
 use Zend\Db\Sql\Predicate\PredicateSet;
+use Zend\Db\Sql\Select;
 
 class QueryExpressionVisitorTest extends PHPUnit_Framework_TestCase
 {
@@ -87,5 +88,45 @@ class QueryExpressionVisitorTest extends PHPUnit_Framework_TestCase
         $predicate = $visitor->dispatch($criteria->getWhereExpression());
 
         $this->assertInstanceOf('Zend\Db\Sql\Predicate\IsNotNull', $predicate);
+    }
+
+    public function testCriteriaWithMaxResultsAppliesLimitToSelect()
+    {
+        $expected = 10;
+        $select = new Select;
+        $criteria  = Criteria::create()->setMaxResults($expected);
+        QueryExpressionVisitor::apply($select, $criteria);
+
+        $actual = $select->getRawState(Select::LIMIT);
+        $this->assertEquals($expected, $actual);
+    }
+
+    public function testCriteriaWithFirstResultAppliesOffsetToSelect()
+    {
+        $expected = 10;
+        $select = new Select;
+        $criteria  = Criteria::create()->setFirstResult($expected);
+        QueryExpressionVisitor::apply($select, $criteria);
+
+        $actual = $select->getRawState(Select::OFFSET);
+        $this->assertEquals($expected, $actual);
+    }
+
+    public function testCriteriaWithOrderByAppliesOrderToSelect()
+    {
+        $select = new Select;
+        $criteria  = Criteria::create()->orderBy(array(
+            'field1' => Criteria::ASC,
+            'field2' => Criteria::DESC,
+        ));
+
+        QueryExpressionVisitor::apply($select, $criteria);
+
+        $order = $select->getRawState(Select::ORDER);
+        $expected = array(
+            'field1' => Select::ORDER_ASCENDING,
+            'field2' => Select::ORDER_DESCENDING,
+        );
+        $this->assertEquals($expected, $order);
     }
 }

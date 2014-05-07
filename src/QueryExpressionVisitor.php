@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\Expr\CompositeExpression;
 use Doctrine\Common\Collections\Expr\Expression;
 use Doctrine\Common\Collections\Expr\ExpressionVisitor;
 use Doctrine\Common\Collections\Expr\Value;
+use Doctrine\Common\Collections\Criteria;
 use Zend\Db\Sql\Predicate\Expression as PredicateExpression;
 use Zend\Db\Sql\Predicate\In;
 use Zend\Db\Sql\Predicate\IsNotNull;
@@ -17,6 +18,7 @@ use Zend\Db\Sql\Predicate\NotIn;
 use Zend\Db\Sql\Predicate\Operator;
 use Zend\Db\Sql\Predicate\PredicateInterface;
 use Zend\Db\Sql\Predicate\PredicateSet;
+use Zend\Db\Sql\Select;
 
 class QueryExpressionVisitor extends ExpressionVisitor
 {
@@ -28,6 +30,11 @@ class QueryExpressionVisitor extends ExpressionVisitor
         Comparison::LTE => Operator::OP_LTE,
         Comparison::GT  => Operator::OP_GT,
         Comparison::GTE => Operator::OP_GTE,
+    );
+
+    protected static $orderMap = array(
+        Criteria::ASC  => Select::ORDER_ASCENDING,
+        Criteria::DESC => Select::ORDER_DESCENDING,
     );
 
     /**
@@ -134,5 +141,36 @@ class QueryExpressionVisitor extends ExpressionVisitor
         }
 
         return $predicate;
+    }
+
+    public static function apply($select, $criteria)
+    {
+        if (is_numeric($criteria->getMaxResults())) {
+            $select->limit($criteria->getMaxResults());
+        }
+
+        if (is_numeric($criteria->getFirstResult())) {
+            $select->offset($criteria->getFirstResult());
+        }
+
+        if (is_array($criteria->getOrderings())) {
+            $zendDbOrder = array();
+            foreach ($criteria->getOrderings() as $field => $order) {
+                $zendDbOrder[$field] = self::convertOrder($order);
+            }
+            $select->order($zendDbOrder);
+        }
+    }
+
+    /**
+     * Converts Criteria expression to Query one based on static map.
+     *
+     * @param string $order
+     *
+     * @return string|null
+     */
+    private static function convertOrder($order)
+    {
+        return isset(self::$orderMap[$order]) ? self::$orderMap[$order] : null;
     }
 }
