@@ -1,8 +1,6 @@
 <?php
 namespace Roave\DbCriteria;
 
-use Doctrine\Common\Collections\ArrayCollection;
-
 use Doctrine\Common\Collections\Expr\Comparison;
 use Doctrine\Common\Collections\Expr\CompositeExpression;
 use Doctrine\Common\Collections\Expr\Expression;
