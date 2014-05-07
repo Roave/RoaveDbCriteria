@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\Expr\CompositeExpression;
 use Doctrine\Common\Collections\Expr\Expression;
 use Doctrine\Common\Collections\Expr\ExpressionVisitor;
 use Doctrine\Common\Collections\Expr\Value;
+use Doctrine\Common\Collections\Criteria;
 use Zend\Db\Sql\Predicate\Expression as PredicateExpression;
 use Zend\Db\Sql\Predicate\In;
 use Zend\Db\Sql\Predicate\IsNotNull;
@@ -17,10 +18,14 @@ use Zend\Db\Sql\Predicate\NotIn;
 use Zend\Db\Sql\Predicate\Operator;
 use Zend\Db\Sql\Predicate\PredicateInterface;
 use Zend\Db\Sql\Predicate\PredicateSet;
+use Zend\Db\Sql\Select;
 
 class QueryExpressionVisitor extends ExpressionVisitor
 {
-    protected static $operatorMap = array(
+    /**
+     * @var string[]
+     */
+    private static $operatorMap = array(
         Comparison::EQ  => Operator::OP_EQ,
         Comparison::IS  => Operator::OP_EQ,
         Comparison::NEQ => Operator::OP_NE,
@@ -28,6 +33,14 @@ class QueryExpressionVisitor extends ExpressionVisitor
         Comparison::LTE => Operator::OP_LTE,
         Comparison::GT  => Operator::OP_GT,
         Comparison::GTE => Operator::OP_GTE,
+    );
+
+    /**
+     * @var string[]
+     */
+    private static $orderMap = array(
+        Criteria::ASC  => Select::ORDER_ASCENDING,
+        Criteria::DESC => Select::ORDER_DESCENDING,
     );
 
     /**
@@ -134,5 +147,49 @@ class QueryExpressionVisitor extends ExpressionVisitor
         }
 
         return $predicate;
+    }
+
+    /**
+     * Apply limit, offset, and order to a select object
+     *
+     * @param Select   $select   The Select object to modify
+     * @param Criteria $criteria The Criteria object to get limit/offset/order info from
+     *
+     * @return Select
+     */
+    public static function apply(Select $select, Criteria $criteria)
+    {
+        $maxResults = $criteria->getMaxResults();
+        if ($maxResults !== null) {
+            $select->limit($maxResults);
+        }
+
+        $firstResult = $criteria->getFirstResult();
+        if ($firstResult !== null) {
+            $select->offset($firstResult);
+        }
+
+        $orderings = $criteria->getOrderings();
+        if ($orderings !== null) {
+            $zendDbOrder = array();
+            foreach ($orderings as $field => $order) {
+                $zendDbOrder[$field] = self::convertOrder($order);
+            }
+            $select->order($zendDbOrder);
+        }
+
+        return $select;
+    }
+
+    /**
+     * Converts Criteria expression to Query one based on static map.
+     *
+     * @param string $order
+     *
+     * @return string|null
+     */
+    private static function convertOrder($order)
+    {
+        return isset(self::$orderMap[$order]) ? self::$orderMap[$order] : null;
     }
 }
