@@ -23,9 +23,9 @@ use Zend\Db\Sql\Select;
 class QueryExpressionVisitor extends ExpressionVisitor
 {
     /**
-     * @var array
+     * @var string[]
      */
-    protected static $operatorMap = array(
+    private static $operatorMap = array(
         Comparison::EQ  => Operator::OP_EQ,
         Comparison::IS  => Operator::OP_EQ,
         Comparison::NEQ => Operator::OP_NE,
@@ -36,9 +36,9 @@ class QueryExpressionVisitor extends ExpressionVisitor
     );
 
     /**
-     * @var array
+     * @var string[]
      */
-    protected static $orderMap = array(
+    private static $orderMap = array(
         Criteria::ASC  => Select::ORDER_ASCENDING,
         Criteria::DESC => Select::ORDER_DESCENDING,
     );
@@ -155,7 +155,7 @@ class QueryExpressionVisitor extends ExpressionVisitor
      * @param Select   $select   The Select object to modify
      * @param Criteria $criteria The Criteria object to get limit/offset/order info from
      *
-     * @return void
+     * @return Select
      */
     public static function apply(Select $select, Criteria $criteria)
     {
@@ -177,6 +177,8 @@ class QueryExpressionVisitor extends ExpressionVisitor
             }
             $select->order($zendDbOrder);
         }
+
+        return $select;
     }
 
     /**
