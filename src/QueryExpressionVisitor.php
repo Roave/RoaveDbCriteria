@@ -22,6 +22,9 @@ use Zend\Db\Sql\Select;
 
 class QueryExpressionVisitor extends ExpressionVisitor
 {
+    /**
+     * @var array
+     */
     protected static $operatorMap = array(
         Comparison::EQ  => Operator::OP_EQ,
         Comparison::IS  => Operator::OP_EQ,
@@ -32,6 +35,9 @@ class QueryExpressionVisitor extends ExpressionVisitor
         Comparison::GTE => Operator::OP_GTE,
     );
 
+    /**
+     * @var array
+     */
     protected static $orderMap = array(
         Criteria::ASC  => Select::ORDER_ASCENDING,
         Criteria::DESC => Select::ORDER_DESCENDING,
@@ -143,19 +149,30 @@ class QueryExpressionVisitor extends ExpressionVisitor
         return $predicate;
     }
 
-    public static function apply($select, $criteria)
+    /**
+     * Apply limit, offset, and order to a select object
+     *
+     * @param Select   $select   The Select object to modify
+     * @param Criteria $criteria The Criteria object to get limit/offset/order info from
+     *
+     * @return void
+     */
+    public static function apply(Select $select, Criteria $criteria)
     {
-        if (is_numeric($criteria->getMaxResults())) {
-            $select->limit($criteria->getMaxResults());
+        $maxResults = $criteria->getMaxResults();
+        if ($maxResults !== null) {
+            $select->limit($maxResults);
         }
 
-        if (is_numeric($criteria->getFirstResult())) {
-            $select->offset($criteria->getFirstResult());
+        $firstResult = $criteria->getFirstResult();
+        if ($firstResult !== null) {
+            $select->offset($firstResult);
         }
 
-        if (is_array($criteria->getOrderings())) {
+        $orderings = $criteria->getOrderings();
+        if ($orderings !== null) {
             $zendDbOrder = array();
-            foreach ($criteria->getOrderings() as $field => $order) {
+            foreach ($orderings as $field => $order) {
                 $zendDbOrder[$field] = self::convertOrder($order);
             }
             $select->order($zendDbOrder);
